@@ -3,8 +3,8 @@
 Trabajo Práctico Integrador de Programación IV. Aplicación web para un negocio de comidas: los clientes recorren el catálogo, arman un carrito y confirman pedidos; el administrador gestiona categorías, productos, stock, pedidos y usuarios.
 
 - **Alumno:** Martín Rotolo
-- **Repositorio:** https://github.com/USUARIO/REPOSITORIO
-- **Video de demostración:** https://LINK-DEL-VIDEO
+- **Repositorio:** https://github.com/MartinRotolo/foodstore_tpi
+- **Video de demostración:** https://youtu.be/-VwzGlaWr6Q
 
 ## Estructura
 
