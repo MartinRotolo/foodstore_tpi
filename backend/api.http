@@ -1,0 +1,598 @@
+@baseUrl = http://127.0.0.1:8000
+@api = {{baseUrl}}/api/v1
+
+### 1. Registro de un cliente (201 Created)
+POST {{api}}/auth/register
+Content-Type: application/json
+
+{
+  "username": "ana",
+  "full_name": "Ana Gómez",
+  "email": "ana@mail.com",
+  "password": "Ana12345!"
+}
+
+### 2. Error: username repetido (409 Conflict)
+POST {{api}}/auth/register
+Content-Type: application/json
+
+{
+  "username": "ana",
+  "full_name": "Otra Ana",
+  "email": "otra@mail.com",
+  "password": "Ana12345!"
+}
+
+### 3. Error: email repetido (409 Conflict)
+POST {{api}}/auth/register
+Content-Type: application/json
+
+{
+  "username": "ana2",
+  "full_name": "Ana Gómez",
+  "email": "ana@mail.com",
+  "password": "Ana12345!"
+}
+
+### 4. Error: contraseña de menos de 8 caracteres (422 Unprocessable Entity)
+POST {{api}}/auth/register
+Content-Type: application/json
+
+{
+  "username": "pepe",
+  "full_name": "Pepe Ruiz",
+  "email": "pepe@mail.com",
+  "password": "corta"
+}
+
+### 5. Error: perfil sin sesión (401 Unauthorized)
+GET {{api}}/auth/me
+
+### 6. Error: credenciales incorrectas (401 Unauthorized)
+POST {{api}}/auth/token
+Content-Type: application/x-www-form-urlencoded
+
+username=ana&password=incorrecta
+
+### 7. Login de ana; el token queda en la cookie (200 OK)
+POST {{api}}/auth/token
+Content-Type: application/x-www-form-urlencoded
+
+username=ana&password=Ana12345!
+
+### 8. Perfil del usuario con sesión (200 OK)
+GET {{api}}/auth/me
+
+### 9. Error: listado de usuarios con rol user (403 Forbidden)
+GET {{api}}/admin/usuarios
+
+### 10. Error: crear categoría con rol user (403 Forbidden)
+POST {{api}}/categorias
+Content-Type: application/json
+
+{
+  "nombre": "Sin permiso"
+}
+
+### 11. Crear pedido 1: 2 hamburguesas clásicas y 3 gaseosas (201 Created)
+# @name pedido1
+POST {{api}}/pedidos
+Content-Type: application/json
+
+{
+  "items": [
+    {
+      "producto_id": 1,
+      "cantidad": 2
+    },
+    {
+      "producto_id": 7,
+      "cantidad": 3
+    }
+  ],
+  "forma_pago": "EFECTIVO",
+  "direccion_entrega": "Av. Colón 1234, Córdoba",
+  "notas": "Sin cebolla"
+}
+
+### 12. Error: producto repetido en el pedido (400 Bad Request)
+POST {{api}}/pedidos
+Content-Type: application/json
+
+{
+  "items": [
+    {
+      "producto_id": 1,
+      "cantidad": 1
+    },
+    {
+      "producto_id": 1,
+      "cantidad": 2
+    }
+  ],
+  "forma_pago": "EFECTIVO",
+  "direccion_entrega": "Av. Colón 1234, Córdoba"
+}
+
+### 13. Error: stock insuficiente en el segundo ítem (400 Bad Request)
+POST {{api}}/pedidos
+Content-Type: application/json
+
+{
+  "items": [
+    {
+      "producto_id": 2,
+      "cantidad": 1
+    },
+    {
+      "producto_id": 6,
+      "cantidad": 99
+    }
+  ],
+  "forma_pago": "EFECTIVO",
+  "direccion_entrega": "Av. Colón 1234, Córdoba"
+}
+
+### 14. El primer ítem del pedido rechazado no descontó stock: sigue en 15 (200 OK)
+GET {{api}}/productos/2
+
+### 15. Error: producto inexistente (404 Not Found)
+POST {{api}}/pedidos
+Content-Type: application/json
+
+{
+  "items": [
+    {
+      "producto_id": 999,
+      "cantidad": 1
+    }
+  ],
+  "forma_pago": "EFECTIVO",
+  "direccion_entrega": "Av. Colón 1234, Córdoba"
+}
+
+### 16. Error: dirección de menos de 5 caracteres (422 Unprocessable Entity)
+POST {{api}}/pedidos
+Content-Type: application/json
+
+{
+  "items": [
+    {
+      "producto_id": 1,
+      "cantidad": 1
+    }
+  ],
+  "forma_pago": "EFECTIVO",
+  "direccion_entrega": "Ca"
+}
+
+### 17. Error: forma de pago inválida (422 Unprocessable Entity)
+POST {{api}}/pedidos
+Content-Type: application/json
+
+{
+  "items": [
+    {
+      "producto_id": 1,
+      "cantidad": 1
+    }
+  ],
+  "forma_pago": "TARJETA",
+  "direccion_entrega": "Av. Colón 1234, Córdoba"
+}
+
+### 18. Error: pedido sin ítems (422 Unprocessable Entity)
+POST {{api}}/pedidos
+Content-Type: application/json
+
+{
+  "items": [],
+  "forma_pago": "EFECTIVO",
+  "direccion_entrega": "Av. Colón 1234"
+}
+
+### 19. Crear pedido 2: 1 hamburguesa veggie (201 Created)
+# @name pedido2
+POST {{api}}/pedidos
+Content-Type: application/json
+
+{
+  "items": [
+    {
+      "producto_id": 3,
+      "cantidad": 1
+    }
+  ],
+  "forma_pago": "TRANSFERENCIA",
+  "direccion_entrega": "Av. Colón 1234, Córdoba"
+}
+
+### 20. La hamburguesa veggie bajó de 10 a 9 (200 OK)
+GET {{api}}/productos/3
+
+### 21. Pedidos propios (200 OK)
+GET {{api}}/pedidos
+
+### 22. Detalle del pedido 1 con sus líneas (200 OK)
+GET {{api}}/pedidos/{{pedido1.response.body.id}}
+
+### 23. Error: cambiar estado con rol user (403 Forbidden)
+PATCH {{api}}/pedidos/{{pedido1.response.body.id}}/estado
+Content-Type: application/json
+
+{
+  "estado": "EN_PREPARACION"
+}
+
+### 24. Error: resumen con rol user (403 Forbidden)
+GET {{api}}/pedidos/resumen
+
+### 25. Cancelar el pedido 2, que está PENDIENTE (200 OK)
+PATCH {{api}}/pedidos/{{pedido2.response.body.id}}/cancelar
+
+### 26. El stock de la hamburguesa veggie volvió a 10 (200 OK)
+GET {{api}}/productos/3
+
+### 27. Error: cancelar un pedido ya cancelado (400 Bad Request)
+PATCH {{api}}/pedidos/{{pedido2.response.body.id}}/cancelar
+
+### 28. Error: cancelar un pedido inexistente (404 Not Found)
+PATCH {{api}}/pedidos/999/cancelar
+
+### 29. Logout: borra la cookie (200 OK)
+POST {{api}}/auth/logout
+
+### 30. Registro de un segundo cliente (201 Created)
+POST {{api}}/auth/register
+Content-Type: application/json
+
+{
+  "username": "beto",
+  "full_name": "Beto Díaz",
+  "email": "beto@mail.com",
+  "password": "Beto1234!"
+}
+
+### 31. Login de beto (200 OK)
+POST {{api}}/auth/token
+Content-Type: application/x-www-form-urlencoded
+
+username=beto&password=Beto1234!
+
+### 32. Error: ver el pedido de otro usuario (403 Forbidden)
+GET {{api}}/pedidos/{{pedido1.response.body.id}}
+
+### 33. Error: cancelar el pedido de otro usuario (403 Forbidden)
+PATCH {{api}}/pedidos/{{pedido1.response.body.id}}/cancelar
+
+### 34. Error: pedido inexistente (404 Not Found)
+GET {{api}}/pedidos/999
+
+### 35. Beto no ve pedidos ajenos en su listado (200 OK)
+GET {{api}}/pedidos
+
+### 36. Logout de beto (200 OK)
+POST {{api}}/auth/logout
+
+### 37. Login del admin del seed (200 OK)
+POST {{api}}/auth/token
+Content-Type: application/x-www-form-urlencoded
+
+username=admin&password=Admin1234!
+
+### 38. Listado de usuarios (200 OK)
+GET {{api}}/admin/usuarios
+
+### 39. Error: el admin no puede desactivarse a sí mismo (400 Bad Request)
+POST {{api}}/admin/usuarios/1/desactivar
+
+### 40. Desactivar a beto (200 OK)
+POST {{api}}/admin/usuarios/3/desactivar
+
+### 41. Desactivar a beto de nuevo: idempotente (200 OK)
+POST {{api}}/admin/usuarios/3/desactivar
+
+### 42. Error: activar un usuario inexistente (404 Not Found)
+POST {{api}}/admin/usuarios/999/activar
+
+### 43. Categorías activas (200 OK)
+GET {{api}}/categorias
+
+### 44. Crear la categoría Empanadas (201 Created)
+POST {{api}}/categorias
+Content-Type: application/json
+
+{
+  "nombre": "Empanadas",
+  "descripcion": "Empanadas al horno"
+}
+
+### 45. Error: nombre de categoría repetido (409 Conflict)
+POST {{api}}/categorias
+Content-Type: application/json
+
+{
+  "nombre": "Pizzas"
+}
+
+### 46. Error: nombre de 1 carácter (422 Unprocessable Entity)
+POST {{api}}/categorias
+Content-Type: application/json
+
+{
+  "nombre": "A"
+}
+
+### 47. Actualizar solo la descripción; el nombre se conserva (200 OK)
+PUT {{api}}/categorias/5
+Content-Type: application/json
+
+{
+  "descripcion": "Empanadas al horno y fritas"
+}
+
+### 48. Error: renombrar con un nombre existente (409 Conflict)
+PUT {{api}}/categorias/5
+Content-Type: application/json
+
+{
+  "nombre": "Pizzas"
+}
+
+### 49. Baja lógica de Empanadas (204 No Content)
+DELETE {{api}}/categorias/5
+
+### 50. Error: detalle de una categoría dada de baja (404 Not Found)
+GET {{api}}/categorias/5
+
+### 51. Error: actualizar una categoría dada de baja (404 Not Found)
+PUT {{api}}/categorias/5
+Content-Type: application/json
+
+{
+  "descripcion": "x"
+}
+
+### 52. Error: la baja no libera el nombre (409 Conflict)
+POST {{api}}/categorias
+Content-Type: application/json
+
+{
+  "nombre": "Empanadas"
+}
+
+### 53. Productos con búsqueda sin distinguir mayúsculas (200 OK)
+GET {{api}}/productos?search=PIZZA
+
+### 54. Productos filtrados por categoría y paginados (200 OK)
+GET {{api}}/productos?categoria_id=3&skip=0&limit=2
+
+### 55. Error: limit mayor a 100 (422 Unprocessable Entity)
+GET {{api}}/productos?limit=101
+
+### 56. Error: crear producto en una categoría dada de baja (404 Not Found)
+POST {{api}}/productos
+Content-Type: application/json
+
+{
+  "nombre": "Empanada de carne",
+  "precio_base": 1200,
+  "stock": 30,
+  "categoria_id": 5
+}
+
+### 57. Crear producto (201 Created)
+POST {{api}}/productos
+Content-Type: application/json
+
+{
+  "nombre": "Empanada de carne",
+  "descripcion": "Carne cortada a cuchillo",
+  "precio_base": 1200,
+  "imagen_url": "",
+  "stock": 30,
+  "categoria_id": 1
+}
+
+### 58. Error: precio negativo (422 Unprocessable Entity)
+POST {{api}}/productos
+Content-Type: application/json
+
+{
+  "nombre": "Error",
+  "precio_base": -1,
+  "categoria_id": 1
+}
+
+### 59. Actualizar solo el precio (200 OK)
+PUT {{api}}/productos/12
+Content-Type: application/json
+
+{
+  "precio_base": 1350
+}
+
+### 60. Error: actualizar con una categoría inexistente (404 Not Found)
+PUT {{api}}/productos/12
+Content-Type: application/json
+
+{
+  "categoria_id": 99
+}
+
+### 61. Cambiar stock y disponibilidad (200 OK)
+PATCH {{api}}/productos/12/stock
+Content-Type: application/json
+
+{
+  "stock": 5,
+  "disponible": false
+}
+
+### 62. Error: stock negativo (422 Unprocessable Entity)
+PATCH {{api}}/productos/12/stock
+Content-Type: application/json
+
+{
+  "stock": -1,
+  "disponible": true
+}
+
+### 63. Error: pedir un producto no disponible (400 Bad Request)
+POST {{api}}/pedidos
+Content-Type: application/json
+
+{
+  "items": [
+    {
+      "producto_id": 12,
+      "cantidad": 1
+    }
+  ],
+  "forma_pago": "EFECTIVO",
+  "direccion_entrega": "Av. Colón 1234, Córdoba"
+}
+
+### 64. Baja lógica del producto (204 No Content)
+DELETE {{api}}/productos/12
+
+### 65. Error: detalle de un producto dado de baja (404 Not Found)
+GET {{api}}/productos/12
+
+### 66. Error: pedir un producto dado de baja (404 Not Found)
+POST {{api}}/pedidos
+Content-Type: application/json
+
+{
+  "items": [
+    {
+      "producto_id": 12,
+      "cantidad": 1
+    }
+  ],
+  "forma_pago": "EFECTIVO",
+  "direccion_entrega": "Av. Colón 1234, Córdoba"
+}
+
+### 67. Todos los pedidos, como admin (200 OK)
+GET {{api}}/pedidos
+
+### 68. Pedidos filtrados por estado (200 OK)
+GET {{api}}/pedidos?estado=PENDIENTE
+
+### 69. Error: de PENDIENTE a ENTREGADO (400 Bad Request)
+PATCH {{api}}/pedidos/{{pedido1.response.body.id}}/estado
+Content-Type: application/json
+
+{
+  "estado": "ENTREGADO"
+}
+
+### 70. Pedido 1 a EN_PREPARACION (200 OK)
+PATCH {{api}}/pedidos/{{pedido1.response.body.id}}/estado
+Content-Type: application/json
+
+{
+  "estado": "EN_PREPARACION"
+}
+
+### 71. Error: volver a PENDIENTE (400 Bad Request)
+PATCH {{api}}/pedidos/{{pedido1.response.body.id}}/estado
+Content-Type: application/json
+
+{
+  "estado": "PENDIENTE"
+}
+
+### 72. Pedido 1 a ENTREGADO (200 OK)
+PATCH {{api}}/pedidos/{{pedido1.response.body.id}}/estado
+Content-Type: application/json
+
+{
+  "estado": "ENTREGADO"
+}
+
+### 73. Error: un pedido ENTREGADO no admite cambios (400 Bad Request)
+PATCH {{api}}/pedidos/{{pedido1.response.body.id}}/estado
+Content-Type: application/json
+
+{
+  "estado": "CANCELADO"
+}
+
+### 74. Error: un pedido CANCELADO no admite cambios (400 Bad Request)
+PATCH {{api}}/pedidos/{{pedido2.response.body.id}}/estado
+Content-Type: application/json
+
+{
+  "estado": "EN_PREPARACION"
+}
+
+### 75. Error: estado inexistente (422 Unprocessable Entity)
+PATCH {{api}}/pedidos/{{pedido1.response.body.id}}/estado
+Content-Type: application/json
+
+{
+  "estado": "ENVIADO"
+}
+
+### 76. Error: cambiar estado de un pedido inexistente (404 Not Found)
+PATCH {{api}}/pedidos/999/estado
+Content-Type: application/json
+
+{
+  "estado": "CANCELADO"
+}
+
+### 77. El admin también compra: pedido 3 con 2 pizzas muzzarella (201 Created)
+# @name pedido3
+POST {{api}}/pedidos
+Content-Type: application/json
+
+{
+  "items": [
+    {
+      "producto_id": 4,
+      "cantidad": 2
+    }
+  ],
+  "forma_pago": "EFECTIVO",
+  "direccion_entrega": "Av. Colón 1234, Córdoba"
+}
+
+### 78. La pizza muzzarella bajó de 12 a 10 (200 OK)
+GET {{api}}/productos/4
+
+### 79. Pedido 3 a EN_PREPARACION (200 OK)
+PATCH {{api}}/pedidos/{{pedido3.response.body.id}}/estado
+Content-Type: application/json
+
+{
+  "estado": "EN_PREPARACION"
+}
+
+### 80. Cancelar el pedido 3 desde EN_PREPARACION (200 OK)
+PATCH {{api}}/pedidos/{{pedido3.response.body.id}}/estado
+Content-Type: application/json
+
+{
+  "estado": "CANCELADO"
+}
+
+### 81. La pizza muzzarella volvió a 12 (200 OK)
+GET {{api}}/productos/4
+
+### 82. Resumen del panel (200 OK)
+GET {{api}}/pedidos/resumen
+
+### 83. Logout del admin (200 OK)
+POST {{api}}/auth/logout
+
+### 84. Error: login de una cuenta desactivada (400 Bad Request)
+POST {{api}}/auth/token
+Content-Type: application/x-www-form-urlencoded
+
+username=beto&password=Beto1234!
+
+### 85. El catálogo es público (200 OK)
+GET {{api}}/productos
